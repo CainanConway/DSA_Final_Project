@@ -2,17 +2,70 @@
 #include <utility>
 #include <vector>
 #include <map>
+#include <sstream>
+#include <fstream>
+#include <regex>
+#include <cmath>
+#define RADS_TO_MILES 3956
+#define RADS_TO_KMS 6371
 using namespace std;
 
+
+class Location{
+public:
+
+    double longitude;
+    double latitude;
+    string name;
+    string amenity;
+    double distanceToUser;
+
+    Location(double longit, double lat, string nam, string amen)
+    {
+        longitude = longit;
+        latitude = lat;
+        name = nam;
+        amenity = amen;
+        distanceToUser = 0;
+    }
+
+    double getLongitude() const
+    {
+        return longitude;
+    }
+
+    double getLatitude() const
+    {
+        return latitude;
+    }
+
+    string getName() const
+    {
+        return name;
+    }
+
+    string getAmenity() const
+    {
+        return amenity;
+    }
+
+    double getDistanceToUser() const
+    {
+        return distanceToUser;
+    }
+
+    void setDistanceToUser(double distance)
+    {
+        this->distanceToUser = distance;
+    }
+};
 
 class Map{
 
 public:
     string cityName;
-    map<pair<double,double>, string> locations; //This will hold the longitude and latitude locations of the places
-    vector<double> distancesToPerson; //User will input their location and then we will calculate the distances to each location
-    vector<string> nameOfLocations; //The two vectors will correspond to the same locations. Must be added to at the same time
-
+    vector<Location> theLocations; //Could do this instead...
+    vector<double> distancesToPerson; //User will input their location and then we will calculate the distances to each location//The two vectors will correspond to the same locations. Must be added to at the same time
 
     Map(string nameOfCity)//Constructor with name passed in
     {
@@ -27,30 +80,103 @@ public:
  * same size of the vector that is passed in.
  */
 
-vector<double> CalculateDistances(map<pair<double,double>, string>& cityLocations, double longitude, double latitude)
+
+//Each location has an associated name, longitude and latitude
+vector<double> CalculateDistances(vector<Location>& cityLocations, double userLongitude, double userLatitude)
 {
     //Reference : https://www.geeksforgeeks.org/program-distance-two-points-earth/
 
     //We want the return to be in miles, not KM....
+    //convert the user's position into radians
+    double lat1 = (((M_PI) / 180) * userLatitude);
+    double long1 = (((M_PI) / 180) * userLongitude);
+
+    vector<double> distances;
+    for(int i = 0; i < cityLocations.size(); i++)
+    {
+        //convert the location in position i into radians
+        double lat2 = (((M_PI) / 180) * cityLocations.at(i).getLatitude());
+        double long2 =  (((M_PI) / 180) * cityLocations.at(i).getLongitude());
+        //find the difference in lat and long between the two locations
+        double lat = lat2 - lat1;
+        double longi = long2 - long1;
+        //Haversine formula, convert to miles
+        distances.push_back(RADS_TO_MILES * (2 * (asin(sqrt(pow(sin(lat / 2), 2) + cos(lat1) * cos(lat2) * pow(sin(longi / 2), 2))))));
+        cityLocations.at(i).setDistanceToUser(distances.at(i));
+    }
+    return distances;//currently the function both modifies cityLocations and returns a new vector.  To disable the latter, delete this line.
 }
 
 //Might want a helper function for this actually
 
 
 
-void HeapSort(vector<double>& distances, int n) //N is the number of elements in distances
+void Heapify(vector<Location>& distances, int n, int i) //Reference : https://www.geeksforgeeks.org/heap-sort/
 {
+    int smallest = i; //initalize smallest as root
+    int left = (2 * i) + 1; // left child of root
+    int right = (2 * i) + 2; //right child of root
 
+    //if left child is smaller
+    if(left < n && distances.at(left).getDistanceToUser() < distances.at(smallest).getDistanceToUser())
+    {
+        smallest = left;
+    }
+    //if right child is smaller
+    if(right < n && distances.at(right).getDistanceToUser() < distances.at(smallest).getDistanceToUser())
+    {
+        smallest = right;
+    }
+    //if smallest is not root
+    if(smallest != i)
+    {
+        swap(distances.at(i), distances.at(smallest));
+        Heapify(distances, n, smallest);
+    }
 }
 
-void Heapify(vector<double> distances, int n, int i) //Reference : https://www.geeksforgeeks.org/heap-sort/
+void HeapSort(vector<Location>& distances, int n) //N is the number of elements in distances
 {
-
+    //build heap
+    for(int i = (n / 2) - 1; i >= 0; i--)
+    {
+        Heapify(distances, n, i);
+    }
+    //extract elements from heap
+    for(int i = n - 1; i > 0; i--)
+    {
+        //move root to end
+        swap(distances.at(0), distances.at(i));
+        //heapify reduced heap
+        Heapify(distances, i, 0);
+    }
 }
 
-void QuickSort(vector<double> distances, int low, int high) //Reference : https://www.geeksforgeeks.org/quick-sort/
+int partition(vector<Location>& distances, int low, int high)
 {
+    double pivot = distances.at(high).getDistanceToUser();
+    int i = (low - 1);
 
+    for(int j = low; j <= high - 1; j++)
+    {
+        if (distances.at(j).getDistanceToUser() < pivot)
+        {
+            i++; // increment index of smaller element
+            swap(distances.at(i), distances.at(j));
+        }
+    }
+    swap(distances.at(i + 1), distances.at(high));
+    return (i + 1);
+}
+
+void QuickSort(vector<Location>& distances, int low, int high) //Reference : https://www.geeksforgeeks.org/quick-sort/
+{
+    if (low < high)
+    {
+        int pi = partition(distances, low, high);
+        QuickSort(distances, low, pi - 1);
+        QuickSort(distances, pi + 1, high);
+    }
 }
 
 //Any other methods you need for quickSort
@@ -77,25 +203,123 @@ void QuickSort(vector<double> distances, int low, int high) //Reference : https:
  */
 
 
+
+void parseTextFile(string fileName, vector<Location>& theCity)
+{
+
+    ifstream inFile;
+
+    inFile.open(fileName);
+
+    if(inFile.is_open())
+    {
+        string inputText;
+
+        while(getline(inFile, inputText)){
+
+            if(inputText.substr(0,5) == "POINT")
+            {
+                string points = inputText.substr(inputText.find('(') + 1, (inputText.find(')') - inputText.find('(')-1));
+                istringstream temp(points);
+
+                string tempPoints;
+                vector<string> longAndLat;
+
+                while(getline(temp,tempPoints, ' '))
+                {
+                    longAndLat.push_back(tempPoints);
+                }
+
+                double longitude = stod(longAndLat[0]);
+                double latitude = stod(longAndLat[1]);
+
+                if(inputText.find("amenity") == string::npos && inputText.find("name") == string::npos && inputText.find("highway") != string::npos)
+                {
+                    string tempTypeHighway = inputText.substr(inputText.find("highway") + 8 );
+                    istringstream theHighway(tempTypeHighway);
+                    string highway;
+                    getline(theHighway, highway, ',');
+                    Location tempLocation(longitude, latitude, "NULL", highway);
+                    theCity.push_back(tempLocation);
+                }
+
+
+                if(inputText.find("amenity") != string::npos && inputText.find("name") == string::npos)
+                {
+                    string tempAmenity = inputText.substr(inputText.find("amenity") + 8);
+                    istringstream theAmenity(tempAmenity);
+                    string typeOfAmenity;
+                    getline(theAmenity, typeOfAmenity, ',');
+                    Location tempLocation(longitude, latitude, "NULL", typeOfAmenity);
+                    theCity.push_back(tempLocation);
+                }
+
+
+                if(inputText.find("amenity") != string::npos && inputText.find("name") != string::npos)
+                {
+                    //string typeOfAmenity = inputText.substr(inputText.find("amenity") + 8 , inputText.find(',') - inputText.find("amenity") - 8 );
+
+                    string tempAmenity = inputText.substr(inputText.find("amenity") + 8);
+                    string tempName = inputText.substr(inputText.find("name") + 5);
+
+                    istringstream theAmenity(tempAmenity);
+                    string typeOfAmenity;
+                    getline(theAmenity, typeOfAmenity, ',');
+
+                    istringstream theName(tempName);
+                    string name;
+                    getline(theName, name, ',');
+
+                    string removeString = "%20%";
+                    string replaceString = " ";
+
+                    size_t position = name.find(removeString);
+
+
+                    while(position != string::npos)
+                    {
+                        name.replace(position, removeString.size(), replaceString);
+                        position = name.find(removeString, position + replaceString.size());
+                    }
+
+                    Location tempLocation(longitude, latitude, name, typeOfAmenity);
+                    theCity.push_back(tempLocation);
+                }
+            }
+        }
+        inFile.close();
+    }
+}
+
+
 int main()
 {
 
-    Map myTestMap("Gaineville"); //Don't need this
+    Map GainesvilleMap("Gainesville");
+    Map OrlandoMap("Orlando");
 
-    //Testing values
-    map<pair<double,double>, string> testLocations = {
-            {{-82.3347117, 29.6885229}, "Chickfila"},
-            {{-82.338716, 29.6738562}, "five guys"},
-            {{-82.358686, 29.6335918}, "Moes"},
-            {{-82.3771434, 29.6219949}, "Wendys"},
-            {{-82.3389216, 29.6372585}, "BBQ"},
-            {{-82.3723534, 29.6036513}, "Subway"}
-    };
+
+    parseTextFile("Gainesville.text", GainesvilleMap.theLocations);
+    parseTextFile("Orlando.text", OrlandoMap.theLocations);
 
     double testUserLongitude = -82.349150;
     double testUserLatitude = 29.655120;
 
-    myTestMap.locations = testLocations; //Don't even need this honestly
+
+    int n = (int) (GainesvilleMap.theLocations.size());
+
+    CalculateDistances(GainesvilleMap.theLocations, testUserLongitude, testUserLatitude);
+
+    QuickSort(GainesvilleMap.theLocations, 0, n-1);
+
+    HeapSort(GainesvilleMap.theLocations, n);
+
+    QuickSort(GainesvilleMap.theLocations, GainesvilleMap.theLocations[0].getDistanceToUser(), GainesvilleMap.theLocations[n-1].getDistanceToUser());
+
+
+
+
+
 
 
     //Just call your calculate distances methods and heapsort and quicksort.
