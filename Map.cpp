@@ -255,7 +255,7 @@ void parseTextFile(string fileName, vector<Location>& theCity)
                 }
 
 
-                if(inputText.find("amenity") != string::npos && inputText.find("name") != string::npos)
+                if(inputText.find("amenity") != string::npos && inputText.find("name") != string::npos && inputText.find("fixme") == string::npos)
                 {
                     //string typeOfAmenity = inputText.substr(inputText.find("amenity") + 8 , inputText.find(',') - inputText.find("amenity") - 8 );
 
@@ -275,7 +275,6 @@ void parseTextFile(string fileName, vector<Location>& theCity)
 
                     size_t position = name.find(removeString);
 
-
                     while(position != string::npos)
                     {
                         name.replace(position, removeString.size(), replaceString);
@@ -293,18 +292,19 @@ void parseTextFile(string fileName, vector<Location>& theCity)
 
 
 int main()
-{
-
+{;
     Map GainesvilleMap("Gainesville");
-    Map OrlandoMap("Orlando");
+    Map NewYorkMap("New York");
 
+    parseTextFile("NewGainesville.text", GainesvilleMap.theLocations);
+    parseTextFile("New_York.text", NewYorkMap.theLocations);
 
-    parseTextFile("Gainesville.text", GainesvilleMap.theLocations);
-    parseTextFile("Orlando.text", OrlandoMap.theLocations);
 
     double testUserLongitude = -82.349150;
     double testUserLatitude = 29.655120;
 
+
+    /* ====== TESTING ====== */
 
     int n = (int) (GainesvilleMap.theLocations.size());
 
@@ -314,7 +314,83 @@ int main()
 
     HeapSort(GainesvilleMap.theLocations, n);
 
-    QuickSort(GainesvilleMap.theLocations, GainesvilleMap.theLocations[0].getDistanceToUser(), GainesvilleMap.theLocations[n-1].getDistanceToUser());
+    vector<Location> fastFoodLocations;
+
+
+
+
+
+
+
+
+    /*
+     * We can sort all of the locations based off their amentities and have the user
+     * select which amenity's they want to see are closest to them
+     *
+     * Welcome to our Mapping Application:
+     *
+     * Enter your Longitude Location:
+     *
+     * Enter your Latitude Location:
+     *
+     * Which City would you like to know close locations for:
+     * 1. Gainesville
+     * 2. New York
+     *
+     * What type of amenity are you looking for close to you ?
+     * 1. Fast Food
+     * 2. Restaurant
+     * 3. Places of Worship
+     * 4. Schools
+     * 5. First Responder Offices
+     *
+     *
+     * OUTPUT: Sorting with Heap Sort
+     * Name : Chick fil a ... Distance Away : 0.2322 miles
+     * Name: Subway Distance Away: 1.231 miles
+     * .....
+     *
+     * Heap Sort took : .421 seconds
+     *
+     * OUTPUT: Sorting with Quick Sort
+     * Name :....
+     * Name : ...
+     *
+     * Quick Sort took : .425 seconds
+     *
+     */
+
+
+
+    /* IDEAS FOR OUTPUTS */
+
+    // If user selects Gainesville and fast food do this...
+
+    for(const auto& location : GainesvilleMap.theLocations)
+    {
+        if(location.getAmenity() == "fast_food")
+        {
+            fastFoodLocations.push_back(location);
+        }
+    }
+
+    //Run Heap sort and quick sort with a timer
+
+    QuickSort(fastFoodLocations,0, (int) fastFoodLocations.size() -1);
+
+
+    //Output to screen parsing through fastFoodLocations vector...
+
+    //Each Location has an associative name and distance to user easy to print out to screen...
+
+
+
+    for(int i = 0; i <fastFoodLocations.size(); i++)
+    {
+        cout << "Name: " << fastFoodLocations[i].getName() << ".... Distance to you: " << fastFoodLocations[i].getDistanceToUser() << endl;
+    }
+
+
 
 
 
