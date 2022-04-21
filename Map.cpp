@@ -12,10 +12,10 @@
 #define RADS_TO_KMS 6371
 using namespace std;
 
-
+// Location class based on .text file tags
 class Location{
 public:
-
+    
     double longitude;
     double latitude;
     string name;
@@ -156,7 +156,7 @@ void HeapSort(vector<Location>& distances, int n) //N is the number of elements 
 
 int partition(vector<Location>& distances, int low, int high)
 {
-    double pivot = distances.at(high).getDistanceToUser();
+    double pivot = distances.at(high).getDistanceToUser(); // Get end index of a user's distance
     int i = (low - 1);
 
     for(int j = low; j <= high - 1; j++)
@@ -175,6 +175,7 @@ void QuickSort(vector<Location>& distances, int low, int high) //Reference : htt
 {
     if (low < high)
     {
+        // Pi is assigned to its correct location
         int pi = partition(distances, low, high);
         QuickSort(distances, low, pi - 1);
         QuickSort(distances, pi + 1, high);
@@ -185,7 +186,7 @@ void QuickSort(vector<Location>& distances, int low, int high) //Reference : htt
 
 void parseTextFile(string fileName, vector<Location>& theCity)
 {
-
+    // File is read in
     ifstream inFile;
 
     inFile.open(fileName);
@@ -195,7 +196,7 @@ void parseTextFile(string fileName, vector<Location>& theCity)
         string inputText;
 
         while(getline(inFile, inputText)){
-
+            // "POINT" is used to locate geographical points
             if(inputText.substr(0,5) == "POINT")
             {
                 string points = inputText.substr(inputText.find('(') + 1, (inputText.find(')') - inputText.find('(')-1));
@@ -211,7 +212,7 @@ void parseTextFile(string fileName, vector<Location>& theCity)
 
                 double longitude = stod(longAndLat[0]);
                 double latitude = stod(longAndLat[1]);
-
+                // Push back highway coordiantes
                 if(inputText.find("amenity") == string::npos && inputText.find("name") == string::npos && inputText.find("highway") != string::npos)
                 {
                     string tempTypeHighway = inputText.substr(inputText.find("highway") + 8 );
@@ -222,7 +223,7 @@ void parseTextFile(string fileName, vector<Location>& theCity)
                     theCity.push_back(tempLocation);
                 }
 
-
+                // Push back amentity coordiantes
                 if(inputText.find("amenity") != string::npos && inputText.find("name") == string::npos)
                 {
                     string tempAmenity = inputText.substr(inputText.find("amenity") + 8);
@@ -233,7 +234,7 @@ void parseTextFile(string fileName, vector<Location>& theCity)
                     theCity.push_back(tempLocation);
                 }
 
-
+                // Push back name of amentity
                 if(inputText.find("amenity") != string::npos && inputText.find("name") != string::npos && inputText.find("fixme") == string::npos)
                 {
                     //string typeOfAmenity = inputText.substr(inputText.find("amenity") + 8 , inputText.find(',') - inputText.find("amenity") - 8 );
@@ -293,38 +294,41 @@ void OutputForQuick(vector<Location>& theLocations)
 
 int main()
 {
-
-    Map GainesvilleMap("Gainesville");
+    // A map for each text file
+    Map GainesvilleMap("Gainesville"); 
     Map NewYorkMap("New York");
 
+    // Parse given text files
     parseTextFile("NewGainesville.text", GainesvilleMap.theLocations);
     parseTextFile("New_York.text", NewYorkMap.theLocations);
 
     int numOfTimes = 0;
 
-
+    // Menu displayed to user
     cout << "Welcome to MapForYou.io!\n" << endl;
 
     cout << "Please enter your longitude and latitude obtained from Google Maps" <<
     " right-click on your location to display the longitude and latitude!\n" << endl;
 
-    system("open https://www.google.com/maps");
+    system("open https://www.google.com/maps"); // User is redirected to google maps
 
     bool runProgram = true;
 
     while(runProgram)
     {
         double longitude, latitude;
-        vector<Location> fastFoodHeap, fastFoodQuick;
-        vector<Location> restaurantsHeap, restaurantsQuick ;
-        vector<Location> placesOfWorshipHeap, placesOfWorshipQuick;
-        vector<Location> schoolsHeap, schoolsQuick;
-        vector<Location> firstResponderHeap, firstResponderQuick;
+        // Vectors for each possible amenitity
+        vector<Location> fastFoodHeap, fastFoodQuick;                      
+        vector<Location> restaurantsHeap, restaurantsQuick;                 
+        vector<Location> placesOfWorshipHeap, placesOfWorshipQuick;         
+        vector<Location> schoolsHeap, schoolsQuick;                         
+        vector<Location> firstResponderHeap, firstResponderQuick;           
         clock_t theClock;
         double timeTaken;
         int afterOne;
         int userInput, userInput2;
 
+        // Secondary menu shown to user
         if(numOfTimes > 0)
         {
             cout << endl;
@@ -381,9 +385,9 @@ int main()
             cin>>userInput;
         }
 
-
+        // Inital menu shown to user
         switch (userInput) {
-            case 1:
+            case 1: // User chooses Gainesville
                 numOfTimes++;
                 CalculateDistances(GainesvilleMap.theLocations, longitude, latitude);
                 cout << "What type of amenity are you looking for close to you?" << endl;
@@ -396,7 +400,7 @@ int main()
                 cin >> userInput2;
 
                 switch(userInput2){
-                    case 1:
+                    case 1:  // Fast Food in Gainesville
                         fastFoodQuick.clear();
                         fastFoodHeap.clear();
                         for(const auto& location : GainesvilleMap.theLocations)
@@ -417,7 +421,7 @@ int main()
 
                        OutputForHeap(fastFoodHeap);
 
-                       cout << "Heap sort took: " << timeTaken << "seconds!" << endl;
+                       cout << "Heap sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Heap sort
                        cout << "--------------------\n" << endl;
 
                        cout << "Sorting with Quick sort..." << endl;
@@ -428,11 +432,11 @@ int main()
                        timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                        OutputForQuick(fastFoodQuick);
-                       cout << "Quick sort took: " << timeTaken << "seconds!" << endl;
+                       cout << "Quick sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Quick sort
 
                        break;
 
-                    case 2:
+                    case 2: // Resturants in Gainesville
                         restaurantsHeap.clear();
                         restaurantsQuick.clear();
                         for(const auto& location : GainesvilleMap.theLocations)
@@ -453,7 +457,7 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForHeap(restaurantsHeap);
-                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Heap sort
                         cout << "--------------------\n" << endl;
 
                         cout << "Sorting with Quick sort..." << endl;
@@ -464,11 +468,11 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForQuick(restaurantsQuick);
-                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Quick sort
 
                         break;
 
-                    case 3:
+                    case 3: // Places of worship in Gainesville
                         placesOfWorshipQuick.clear();
                         placesOfWorshipHeap.clear();
                         for(const auto& location : GainesvilleMap.theLocations)
@@ -489,7 +493,7 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForHeap(placesOfWorshipHeap);
-                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Heap sort
                         cout << "--------------------\n" << endl;
 
                         cout << "Sorting with Quick sort..." << endl;
@@ -500,10 +504,10 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForQuick(placesOfWorshipQuick);
-                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Quick sort
                         break;
 
-                    case 4:
+                    case 4: // Schools in Gainesville
                         schoolsQuick.clear();
                         schoolsHeap.clear();
                         for(const auto& location : GainesvilleMap.theLocations)
@@ -524,7 +528,7 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForHeap(schoolsHeap);
-                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Heap sort
                         cout << "--------------------\n" << endl;
 
                         cout << "Sorting with Quick sort..." << endl;
@@ -535,10 +539,10 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForQuick(schoolsQuick);
-                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Quick sort
                         break;
 
-                    case 5:
+                    case 5: // First responders in Gainesville
                         firstResponderQuick.clear();
                         firstResponderHeap.clear();
                         for(const auto& location : GainesvilleMap.theLocations)
@@ -559,7 +563,7 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForHeap(firstResponderHeap);
-                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Heap sort
                         cout << "--------------------\n" << endl;
 
                         cout << "Sorting with Quick sort..." << endl;
@@ -570,7 +574,7 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForQuick(firstResponderQuick);
-                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Quick sort
                         break;
 
                     default:
@@ -579,7 +583,7 @@ int main()
                 }
                 break;
 
-            case 2:
+            case 2: // User chooses New York
                 numOfTimes++;
                 CalculateDistances(NewYorkMap.theLocations, longitude, latitude);
                 cout << "What type of amenity are you looking for close to you?" << endl;
@@ -592,7 +596,7 @@ int main()
                 cin >> userInput2;
 
                 switch(userInput2){
-                    case 1:
+                    case 1: // Fast food in New York
                         fastFoodQuick.clear();
                         fastFoodHeap.clear();
                         for(const auto& location : NewYorkMap.theLocations)
@@ -613,7 +617,7 @@ int main()
 
                         OutputForHeap(fastFoodHeap);
 
-                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Heap sort
                         cout << "--------------------\n" << endl;
 
                         cout << "Sorting with Quick sort..." << endl;
@@ -624,11 +628,11 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForQuick(fastFoodQuick);
-                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Quick sort
 
                         break;
 
-                    case 2:
+                    case 2: // Resturants in New york
                         restaurantsHeap.clear();
                         restaurantsQuick.clear();
                         for(const auto& location : NewYorkMap.theLocations)
@@ -649,7 +653,7 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForHeap(restaurantsHeap);
-                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Heap sort
                         cout << "--------------------\n" << endl;
 
                         cout << "Sorting with Quick sort..." << endl;
@@ -660,11 +664,11 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForQuick(restaurantsQuick);
-                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Quick sort
 
                         break;
 
-                    case 3:
+                    case 3: // Places of worship in New york
                         placesOfWorshipQuick.clear();
                         placesOfWorshipHeap.clear();
                         for(const auto& location : NewYorkMap.theLocations)
@@ -685,7 +689,7 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForHeap(placesOfWorshipHeap);
-                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Heap sort
                         cout << "--------------------\n" << endl;
 
                         cout << "Sorting with Quick sort..." << endl;
@@ -696,10 +700,10 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForQuick(placesOfWorshipQuick);
-                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Quick sort
                         break;
 
-                    case 4:
+                    case 4: // Schools in New york
                         schoolsQuick.clear();
                         schoolsHeap.clear();
                         for(const auto& location : NewYorkMap.theLocations)
@@ -720,7 +724,7 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForHeap(schoolsHeap);
-                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Heap sort
                         cout << "--------------------" << endl;
 
                         cout << "Sorting with Quick sort..." << endl;
@@ -731,10 +735,10 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForQuick(schoolsQuick);
-                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Quick sort
                         break;
 
-                    case 5:
+                    case 5: // First Responders in New York
                         firstResponderQuick.clear();
                         firstResponderHeap.clear();
                         for(const auto& location : NewYorkMap.theLocations)
@@ -755,7 +759,7 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForHeap(firstResponderHeap);
-                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Heap sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Heap sort
                         cout << "--------------------\n" << endl;
 
                         cout << "Sorting with Quick sort..." << endl;
@@ -766,7 +770,7 @@ int main()
                         timeTaken = ((double)theClock) / CLOCKS_PER_SEC;
 
                         OutputForQuick(firstResponderQuick);
-                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl;
+                        cout << "Quick sort took: " << timeTaken << "seconds!" << endl; // Show total time taken for Quick sort
                         break;
 
                     default:
@@ -787,56 +791,7 @@ int main()
 
     }
 
-
-
-
-
-
-
-
-
-
-
-
-    /*
-     * We can sort all of the locations based off their amentities and have the user
-     * select which amenity's they want to see are closest to them
-     *
-     * Welcome to our Mapping Application:
-     *
-     * Enter your Longitude Location:
-     *
-     * Enter your Latitude Location:
-     *
-     * Which City would you like to know close locations for:
-     * 1. Gainesville
-     * 2. New York
-     *
-     * What type of amenity are you looking for close to you ?
-     * 1. Fast Food
-     * 2. Restaurant
-     * 3. Places of Worship
-     * 4. Schools
-     * 5. First Responder Offices
-     *
-     *
-     * OUTPUT: Sorting with Heap Sort
-     * Name : Chick fil a ... Distance Away : 0.2322 miles
-     * Name: Subway Distance Away: 1.231 miles
-     * .....
-     *
-     * Heap Sort took : .421 seconds
-     *
-     * OUTPUT: Sorting with Quick Sort
-     * Name :....
-     * Name : ...
-     *
-     * Quick Sort took : .425 seconds
-     *
-     */
-
-    //Just call your calculate distances methods and heapsort and quicksort.
-
+    
 }
 
 
